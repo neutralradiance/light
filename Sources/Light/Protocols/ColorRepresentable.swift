@@ -209,7 +209,10 @@ extension ColorRepresentable {
     }
 
     public func transform(_ value: @escaping (CGFloat) -> CGFloat) -> Self {
-        Self(red: value(red), green: value(green), blue: value(blue), alpha: alpha)
+        Self(red: value(red).squeezed,
+             green: value(green).squeezed,
+             blue: value(blue).squeezed,
+             alpha: alpha)
     }
 
 //    public func saturation(_ value: CGFloat) -> Self {
@@ -217,16 +220,16 @@ extension ColorRepresentable {
 //    }
 
     public func lighten(_ value: CGFloat) -> Self {
-        transform { $0 * value }
+        transform { ($0*(value+1)).squeezed }
     }
     public func darken(_ value: CGFloat) -> Self {
-        transform { $0 / value }
+        transform { (($0/10)/value).squeezed }
     }
     public var lightenedToAlpha: Self {
-        lighten((1-alpha)/1.911)
+        lighten((1-alpha)).opacity(1)
     }
     public var darkenedToAlpha: Self {
-        darken((1-alpha)/1.911)
+        darken((1-alpha)).opacity(1)
     }
 }
 
