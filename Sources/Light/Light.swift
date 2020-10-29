@@ -9,10 +9,10 @@ import SwiftUI
 
 /// `Codable` color.
 @frozen
-public struct Light: Codable {
+public struct Light {
     public typealias NativeType = NativeColor
 
-    fileprivate var redComponent: CGFloat,
+    public var redComponent: CGFloat,
                     greenComponent: CGFloat,
                     blueComponent: CGFloat,
                     alphaComponent: CGFloat
@@ -28,17 +28,17 @@ public struct Light: Codable {
 public extension Light {
     // Generic Colors
     static var clear: Self { Self(alpha: 0) }
-    static var black: Self { Self(red: 0, green: 0, blue: 0) }
+    static var black: Self { Self() }
     static var white: Self { Self(red: 1, green: 1, blue: 1) }
-    static var red: Self { Self(red: 1, green: 0, blue: 0) }
-    static var green: Self { Self(red: 0, green: 1, blue: 0) }
-    static var blue: Self { Self(red: 0, green: 0, blue: 1) }
+    static var red: Self { Self(red: 1) }
+    static var green: Self { Self(green: 1) }
+    static var blue: Self { Self(blue: 1) }
 
     // Special Colors
     static var graphite: Self { Self(red: 0.56, green: 0.56, blue: 0.55) }
 }
 
-extension Light: ColorRepresentable {
+extension Light: ColorCodable {
     public var nativeColor: NativeType {
         NativeType(red: self.redComponent,
               green: self.greenComponent,

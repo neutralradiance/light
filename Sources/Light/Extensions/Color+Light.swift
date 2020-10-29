@@ -7,7 +7,7 @@
 
 import SwiftUI
 
-extension NativeColor: ColorRepresentable {
+extension NativeColor: ColorCodable {
     public var light: Light {
         Light(fromComponents: [red, green, blue, alpha])
     }
@@ -45,7 +45,7 @@ extension NativeColor: ColorRepresentable {
     }
 }
 
-extension Color: ColorRepresentable {
+extension Color: ColorCodable {
     public init(red: CGFloat = 0,
                 green: CGFloat = 0,
                 blue: CGFloat = 0,

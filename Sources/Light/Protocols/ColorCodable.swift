@@ -18,9 +18,10 @@ internal var floatRange: ClosedRange<CGFloat> { 0...1 }
 internal var webRange: ClosedRange<Int> { 0...255 }
 internal var roundValue: Int { 16 }
 
-public protocol ColorRepresentable: Hashable,
-                        ExpressibleByStringLiteral,
-                        ExpressibleByArrayLiteral {
+public protocol ColorCodable: Codable,
+                              Identifiable,
+                              ExpressibleByStringLiteral,
+                              ExpressibleByArrayLiteral {
     var red: CGFloat { get }
     var green: CGFloat { get }
     var blue: CGFloat { get }
@@ -40,13 +41,35 @@ public protocol ColorRepresentable: Hashable,
     init(hue: CGFloat, saturation: CGFloat, luminosity: CGFloat, alpha: CGFloat)
     init(red: Int, green: Int, blue: Int, alpha: CGFloat)
     init?(hex: String, alpha: CGFloat)
-    init(fromComponents: [CGFloat?])
+    init(fromComponents: [CGFloat])
     init(fromComponents: RGBComponents)
 }
 
-extension ColorRepresentable {
-    public typealias RGBComponents = (red: CGFloat?, green: CGFloat?, blue: CGFloat?, alpha: CGFloat?)
+enum ColorCodingKeys: CodingKey {
+    case red, blue, green, alpha
+}
 
+infix operator ~ : MultiplicationPrecedence
+extension ColorCodable {
+    public typealias RGBComponents = (red: CGFloat?, green: CGFloat?, blue: CGFloat?, alpha: CGFloat?)
+    public var id: UUID {
+        UUID()//Int(components.map{ $0.toWeb }.map{ String(Int($0)) }.joined())!
+    }
+    public init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: ColorCodingKeys.self)
+        let red = try container.decode(CGFloat.self, forKey: .red)
+        let green = try container.decode(CGFloat.self, forKey: .green)
+        let blue = try container.decode(CGFloat.self, forKey: .blue)
+        let alpha = try container.decode(CGFloat.self, forKey: .alpha)
+        self.init(red: red, green: green, blue: blue, alpha: alpha)
+    }
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: ColorCodingKeys.self)
+        try container.encode(red, forKey: .red)
+        try container.encode(green, forKey: .green)
+        try container.encode(blue, forKey: .blue)
+        try container.encode(alpha, forKey: .alpha)
+    }
     public var red: CGFloat { components[0] }
     public var green: CGFloat { components[1] }
     public var blue: CGFloat { components[2] }
@@ -58,8 +81,45 @@ extension ColorRepresentable {
     public var hex: String { hexComponents.joined() }
     public var rgbComponents: [CGFloat] { [red, green, blue] }
 
-    public static func ==<C: ColorRepresentable>(lhs: Self, rhs: C) -> Bool {
+    public static func == <C: ColorCodable>(lhs: Self, rhs: C) -> Bool {
         lhs.components == rhs.components
+    }
+    public func compare<C: ColorCodable>(_ new: C,_ comparison: @escaping (_ lhs: CGFloat,_ rhs: CGFloat) -> CGFloat) -> [CGFloat] {
+                components.map { lhs -> CGFloat in
+                    var comp: CGFloat!
+                    new.components.forEach { rhs in
+                        comp = comparison(lhs, rhs)
+                    }
+                    return comp
+                }
+    }
+    public func blendColor<C: ColorCodable>(_ color: C,_ midpoint: CGFloat = 0.5) -> Self {
+        Self(fromComponents:
+        compare(color) { lhs, rhs -> CGFloat in
+                (1-midpoint)*pow(lhs, 2)+midpoint*pow(rhs, 2)
+        }+[(1-midpoint)*alpha+midpoint*color.alpha]
+        )
+    }
+//    /// Color blending
+    public static func + <C: ColorCodable>(lhs: Self, rhs: C) -> Self {
+        Self(fromComponents:
+        lhs.compare(rhs) { lhs, rhs -> CGFloat in
+            ((lhs+rhs)/2)
+        }+[(lhs.alpha+rhs.alpha)/2]
+        )
+    }
+    public static func - <C: ColorCodable>(lhs: Self, rhs: C) -> Self {
+        Self(fromComponents:
+        lhs.compare(rhs) { lhs, rhs -> CGFloat in
+            min(lhs+rhs, 1)
+        }+[min(lhs.alpha+rhs.alpha, 1)]
+        )
+    }
+    public static func * <C: ColorCodable>(lhs: Self, rhs: C) -> Self {
+        lhs.blendColor(rhs)
+    }
+    public static func / <C: ColorCodable>(lhs: Self, rhs: C) -> Self {
+        lhs.blendColor(rhs.inverted)
     }
 
     public init(stringLiteral value: StaticString) {
@@ -87,12 +147,12 @@ extension ColorRepresentable {
             q = v * (1 - f * s),
             t = v * (1 - (1 - f) * s)
         switch i.truncatingRemainder(dividingBy: 6) {
-            case 0: r = v; g = t; b = p
-            case 1: r = q; g = v; b = p
-            case 2: r = p; g = v; b = t
-            case 3: r = p; g = q; b = v
-            case 4: r = t; g = p; b = v
-            case 5: r = v; g = p; b = q
+        case 0: r = v; g = t; b = p
+        case 1: r = q; g = v; b = p
+        case 2: r = p; g = v; b = t
+        case 3: r = p; g = q; b = v
+        case 4: r = t; g = p; b = v
+        case 5: r = v; g = p; b = q
         default: break
         }
         self.init(red: r, green: g, blue: b, alpha: alpha)
@@ -101,8 +161,8 @@ extension ColorRepresentable {
     // https://stackoverflow.com/questions/2353211/hsl-to-rgb-color-conversion
     public init(hue: CGFloat = 0, saturation: CGFloat = 0, luminosity: CGFloat, alpha: CGFloat = 1) {
         let h = hue,
-        s = saturation,
-        l = luminosity
+            s = saturation,
+            l = luminosity
         var r: CGFloat = 0,
             g: CGFloat = 0,
             b: CGFloat = 0
@@ -140,7 +200,7 @@ extension ColorRepresentable {
         var hexValue = hex.hasPrefix("#") ? String(hex.dropFirst()) : hex
         if hexValue.count == 3 {
             for (index, char) in hexValue.enumerated() {
-              hexValue.insert(char, at: hexValue.index(hexValue.startIndex, offsetBy: index * 2))
+                hexValue.insert(char, at: hexValue.index(hexValue.startIndex, offsetBy: index * 2))
             }
         }
         guard hexValue.count == 6, let intCode = Int(hexValue, radix: 16) else { return nil }
@@ -150,11 +210,11 @@ extension ColorRepresentable {
                   alpha: alpha)
     }
 
-    public init(fromComponents components: [CGFloat?]) {
-        self.init(red: components[0] ?? 0,
-                  green: components[1] ?? 0,
-                  blue: components[2] ?? 0,
-                  alpha: components[3] ?? 1)
+    public init(fromComponents components: [CGFloat]) {
+        self.init(red: components[0],
+                  green: components[1],
+                  blue: components[2],
+                  alpha: components[3])
     }
 
     public init(fromComponents components: RGBComponents) {
@@ -201,42 +261,66 @@ extension ColorRepresentable {
         }
     }
 
-    public func opacity(_ value: CGFloat) -> Self {
-         Self(red: red,
-              green: green,
-              blue: blue,
-              alpha: value)
+    public func alpha(_ value: CGFloat) -> Self {
+        Self(red: red,
+             green: green,
+             blue: blue,
+             alpha: value)
     }
 
     public func transform(_ value: @escaping (CGFloat) -> CGFloat) -> Self {
         Self(red: value(red).squeezed,
              green: value(green).squeezed,
              blue: value(blue).squeezed,
-             alpha: alpha)
+             alpha: alpha)     }
+    public var inverted: Self {
+        transform { 1-$0 }
     }
-
-//    public func saturation(_ value: CGFloat) -> Self {
-//        transform(alpha: alpha) { $0 * value }
-//    }
-
+    public func hue(_ value: CGFloat) -> Self {
+        Self(hue: value, saturation: saturation, brightness: brightness, alpha: alpha)
+    }
+    public func saturation(_ value: CGFloat) -> Self {
+        Self(hue: hue, saturation: value, brightness: brightness, alpha: alpha)
+    }
+    public func brightness(_ value: CGFloat) -> Self {
+        Self(hue: hue, saturation: saturation, brightness: value, alpha: alpha)
+    }
+    public func luminosity(_ value: CGFloat) -> Self {
+        Self(hue: hue, saturation: saturation, luminosity: value, alpha: alpha)
+    }
     public func lighten(_ value: CGFloat) -> Self {
-        transform { ($0*(value+1)).squeezed }
+        Self(hue: hue, saturation: saturation, brightness: (alpha/value).squeezed, alpha: alpha)
     }
     public func darken(_ value: CGFloat) -> Self {
-        transform { (($0/10)/value).squeezed }
+        Self(hue: hue, saturation: saturation, brightness: (alpha*value).squeezed, alpha: alpha)
     }
     public var lightenedToAlpha: Self {
-        lighten((1-alpha)).opacity(1)
+        guard alpha < 1 else { return self }
+        return lighten(alpha)
+        //return Self(hue: hue, saturation: saturation, brightness: (1-alpha).squeezed)
     }
     public var darkenedToAlpha: Self {
-        darken((1-alpha)).opacity(1)
+        guard alpha < 1 else { return self }
+        return darken(alpha)
+        //return Self(hue: hue, saturation: saturation, brightness: alpha)
+    }
+    public var isDark: Bool {
+        brightness < 0.5
+    }
+    public func isDark<C: ColorCodable>(with background: C) -> Bool {
+        guard alpha < 1 else { return isDark }
+        let projection =
+            (red+green+blue-alpha)+(background.red+background.green+background.blue)
+        return (projection/2) < 1
     }
 }
 
 internal extension ClosedRange {
     func squeeze(_ value: Bound) -> Bound {
-        self.contains(value) ? value :
-            value > upperBound ? upperBound : lowerBound
+        contains(value) ?
+            value : value > upperBound ?
+            upperBound :
+            lowerBound
     }
 }
 
@@ -253,4 +337,10 @@ internal extension CGFloat {
 internal extension Int {
     var squeezed: Int { webRange.squeeze(self) }
     var fromWeb: CGFloat { (CGFloat(self.squeezed) / 255).rounded }
+}
+
+extension Comparable {
+    func clamp(_ lhs: Self, _  rhs: Self) -> Self {
+        min(max(self, lhs), rhs)
+    }
 }
