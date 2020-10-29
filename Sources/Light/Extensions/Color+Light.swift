@@ -18,7 +18,13 @@ extension NativeColor: ColorRepresentable {
             blue: CGFloat = 0,
             alpha: CGFloat = 0
 
+        #if os(macOS)
+        usingColorSpace(.sRGB)?
+            .getHue(&hue, saturation: &saturation, brightness: &brightness, alpha: &alpha)
+        #elseif os(iOS)
         getRed(&red, green: &green, blue: &blue, alpha: &alpha)
+        #endif
+
         return [red, green, blue, alpha]
     }
 
@@ -28,7 +34,13 @@ extension NativeColor: ColorRepresentable {
             brightness: CGFloat = 0,
             alpha: CGFloat = 0
 
+        #if os(macOS)
+        usingColorSpace(.sRGB)?
+            .getHue(&hue, saturation: &saturation, brightness: &brightness, alpha: &alpha)
+        #elseif os(iOS)
         getHue(&hue, saturation: &saturation, brightness: &brightness, alpha: &alpha)
+        #endif
+        
         return [hue, saturation, brightness, alpha]
     }
 }
