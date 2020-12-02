@@ -5,13 +5,11 @@
 //  Created by neutralradiance on 9/6/20.
 //
 
-import SwiftUI
+import Foundation
 
 /// `Codable` color.
-@frozen
 public struct Light {
-    public typealias NativeType = NativeColor
-
+    
     public var redComponent: CGFloat,
                     greenComponent: CGFloat,
                     blueComponent: CGFloat,
@@ -39,13 +37,6 @@ public extension Light {
 }
 
 extension Light: ColorCodable {
-    public var nativeColor: NativeType {
-        NativeType(red: self.redComponent,
-              green: self.greenComponent,
-              blue: self.blueComponent,
-              alpha: self.alphaComponent)
-    }
-
     public var components: [CGFloat] {
         [redComponent, greenComponent, blueComponent, alphaComponent]
     }
@@ -73,3 +64,16 @@ extension Light: ColorCodable {
         return [h, s, v, alphaComponent]
     }
 }
+
+#if canImport(SwiftUI)
+import SwiftUI
+
+public extension Light {
+    var token: Color {
+        Color(red: Double(redComponent),
+              green: Double(greenComponent),
+              blue: Double(blueComponent),
+              opacity: Double(alphaComponent))
+    }
+}
+#endif

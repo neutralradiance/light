@@ -70,6 +70,7 @@ extension ColorCodable {
         try container.encode(blue, forKey: .blue)
         try container.encode(alpha, forKey: .alpha)
     }
+    
     public var red: CGFloat { components[0] }
     public var green: CGFloat { components[1] }
     public var blue: CGFloat { components[2] }
@@ -80,6 +81,12 @@ extension ColorCodable {
     public var luminosity: CGFloat { hslComponents[2] }
     public var hex: String { hexComponents.joined() }
     public var rgbComponents: [CGFloat] { [red, green, blue] }
+    public var nativeColor: NativeColor {
+        NativeColor(red: red,
+              green: green,
+              blue: blue,
+              alpha: alpha)
+    }
 
     public static func == <C: ColorCodable>(lhs: Self, rhs: C) -> Bool {
         lhs.components == rhs.components
@@ -196,6 +203,10 @@ extension ColorCodable {
                   alpha: alpha)
     }
 
+    public static func white(_ value: CGFloat, withAlpha alpha: CGFloat = 1) -> Self {
+        Self(red: value, green: value, blue: value, alpha: alpha)
+    }
+
     public init?(hex: String, alpha: CGFloat = 1) {
         var hexValue = hex.hasPrefix("#") ? String(hex.dropFirst()) : hex
         if hexValue.count == 3 {
@@ -214,7 +225,7 @@ extension ColorCodable {
         self.init(red: components[0],
                   green: components[1],
                   blue: components[2],
-                  alpha: components[3])
+                  alpha: components.count > 3 ? components[3] : 1)
     }
 
     public init(fromComponents components: RGBComponents) {
@@ -288,11 +299,13 @@ extension ColorCodable {
     public func luminosity(_ value: CGFloat) -> Self {
         Self(hue: hue, saturation: saturation, luminosity: value, alpha: alpha)
     }
+
     public func lighten(_ value: CGFloat) -> Self {
-        Self(hue: hue, saturation: saturation, brightness: (alpha/value).squeezed, alpha: alpha)
+        brightness(brightness-(value/10)).alpha(alpha)
     }
+    /// Darkness (0-10)
     public func darken(_ value: CGFloat) -> Self {
-        Self(hue: hue, saturation: saturation, brightness: (alpha*value).squeezed, alpha: alpha)
+        brightness(brightness+(value/10)).alpha(alpha)
     }
     public var lightenedToAlpha: Self {
         guard alpha < 1 else { return self }
@@ -313,6 +326,9 @@ extension ColorCodable {
             (red+green+blue-alpha)+(background.red+background.green+background.blue)
         return (projection/2) < 1
     }
+
+    public static var black: Self { Self.white(0) }
+    public static var white: Self { Self.white(1) }
 }
 
 internal extension ClosedRange {
