@@ -5,7 +5,11 @@
 //  Created by neutralradiance on 9/6/20.
 //
 
-import SwiftUI
+#if canImport(UIKit)
+import UIKit
+#elseif canImport(AppKit)
+import AppKit
+#endif
 
 extension NativeColor: ColorCodable {
 	public var light: Light {
@@ -55,6 +59,9 @@ extension NativeColor: ColorCodable {
 	}
 }
 
+#if canImport(SwiftUI)
+import SwiftUI
+
 @available(macOS 10.15, *, iOS 13.0, *)
 public extension Color {
 	init(_ light: Light) {
@@ -65,3 +72,4 @@ public extension Color {
 		          opacity: Double(light.alpha))
 	}
 }
+#endif

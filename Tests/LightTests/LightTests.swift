@@ -1,11 +1,10 @@
-import XCTest
 @testable import Light
+import XCTest
 
 final class LightTests: XCTestCase {
-    func testExample() {
-    }
+    func testExample() {}
 
     static var allTests = [
-        ("testExample", testExample)
+    	("testExample", testExample)
     ]
 }

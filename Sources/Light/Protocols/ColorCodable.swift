@@ -36,10 +36,30 @@ public protocol ColorCodable: Codable,
 	var hslComponents: [CGFloat] { get }
 	var webComponents: [Int] { get }
 	var hexComponents: [String] { get }
-	init(red: CGFloat, green: CGFloat, blue: CGFloat, alpha: CGFloat)
-	init(hue: CGFloat, saturation: CGFloat, brightness: CGFloat, alpha: CGFloat)
-	init(hue: CGFloat, saturation: CGFloat, luminosity: CGFloat, alpha: CGFloat)
-	init(red: Int, green: Int, blue: Int, alpha: CGFloat)
+	init(
+		red: CGFloat,
+		green: CGFloat,
+		blue: CGFloat,
+		alpha: CGFloat
+	)
+	init(
+		hue: CGFloat,
+		saturation: CGFloat,
+		brightness: CGFloat,
+		alpha: CGFloat
+	)
+	init(
+		hue: CGFloat,
+		saturation: CGFloat,
+		luminosity: CGFloat,
+		alpha: CGFloat
+	)
+	init(
+		red: Int,
+		green: Int,
+		blue: Int,
+		alpha: CGFloat
+	)
 	init?(hex: String, alpha: CGFloat)
 	init(fromComponents: [CGFloat])
 	init(fromComponents: RGBComponents)
@@ -207,7 +227,11 @@ public extension ColorCodable {
 			g = l
 			b = l
 		} else {
-			func hue2rgb(_ p: CGFloat, _ q: CGFloat, _ t: CGFloat) -> CGFloat {
+			func hue2rgb(
+				_ p: CGFloat,
+				_ q: CGFloat,
+				_ t: CGFloat
+			) -> CGFloat {
 				let t = t.squeezed
 				switch t {
 				case 0 ... (1 / 6): return p + (q - p) * 6 * t
@@ -324,10 +348,12 @@ public extension ColorCodable {
 	}
 
 	func transform(_ value: @escaping (CGFloat) -> CGFloat) -> Self {
-		Self(red: value(red).squeezed,
-		     green: value(green).squeezed,
-		     blue: value(blue).squeezed,
-		     alpha: alpha)
+		Self(
+			red: value(red).squeezed,
+			green: value(green).squeezed,
+			blue: value(blue).squeezed,
+			alpha: alpha
+		)
 	}
 
 	var inverted: Self {
@@ -335,15 +361,30 @@ public extension ColorCodable {
 	}
 
 	func hue(_ value: CGFloat) -> Self {
-		Self(hue: value, saturation: saturation, brightness: brightness, alpha: alpha)
+		Self(
+			hue: value,
+			saturation: saturation,
+			brightness: brightness,
+			alpha: alpha
+		)
 	}
 
 	func saturation(_ value: CGFloat) -> Self {
-		Self(hue: hue, saturation: value, brightness: brightness, alpha: alpha)
+		Self(
+			hue: hue,
+			saturation: value,
+			brightness: brightness,
+			alpha: alpha
+		)
 	}
 
 	func brightness(_ value: CGFloat) -> Self {
-		Self(hue: hue, saturation: saturation, brightness: value, alpha: alpha)
+		Self(
+			hue: hue,
+			saturation: saturation,
+			brightness: value,
+			alpha: alpha
+		)
 	}
 
 	func luminosity(_ value: CGFloat) -> Self {
