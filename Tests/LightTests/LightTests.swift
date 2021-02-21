@@ -2,9 +2,9 @@
 import XCTest
 
 final class LightTests: XCTestCase {
-    func testExample() {}
+  func testExample() {}
 
-    static var allTests = [
-    	("testExample", testExample)
-    ]
+  static var allTests = [
+    ("testExample", testExample)
+  ]
 }
