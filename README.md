@@ -1,3 +1,3 @@
 # Light
 
-Codable colors for swift.
+Codable colors for Swift.
