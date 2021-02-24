@@ -28,10 +28,29 @@ public extension NativeColor {
 //    try container.encode(blue, forKey: .blue)
 //    try container.encode(alpha, forKey: .alpha)
 //  }
+  var light: Light {
+    #if os(iOS)
+      return
+        Light(
+          red: components[0],
+          green: components[1],
+          blue: components[2],
+          alpha: components[3]
+        )
+    #elseif os(macOS)
+      return
+        Light(
+          red: Double(redComponent),
+          green: Double(greenComponent),
+          blue: Double(blueComponent),
+          alpha: Double(alphaComponent)
+        )
+    #endif
+  }
 }
 
-extension NativeColor {
-  public var components: [Double] {
+public extension NativeColor {
+  var components: [Double] {
     var red: CGFloat = 0,
         green: CGFloat = 0,
         blue: CGFloat = 0,
@@ -52,7 +71,7 @@ extension NativeColor {
     ]
   }
 
-  public var hsbComponents: [Double] {
+  var hsbComponents: [Double] {
     var hue: CGFloat = 0,
         saturation: CGFloat = 0,
         brightness: CGFloat = 0,
